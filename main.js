@@ -101,7 +101,7 @@ let history = [];
       // translate some text elems
       const dict = [
         ["created", "Criou"],
-        ["deleted", "Apagou"],
+        ["deleted", "Eliminou"],
         ["edited", "Editou"],
         ["from", "de"],
         ["in", "na pasta"],
