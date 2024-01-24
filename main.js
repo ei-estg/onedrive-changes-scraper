@@ -47,7 +47,7 @@ let history = [];
   );
   log(`Logged in as ${name}`);
 
-  customIcon = (name) => {
+  const customIcon = (name) => {
     const avatars = [
       ["André Sousa", 47536659],
       ["João Alves", 59509896],
