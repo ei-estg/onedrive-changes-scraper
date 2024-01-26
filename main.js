@@ -82,7 +82,13 @@ let history = [];
     await page.waitForSelector(".od-ItemActivityFeed");
     log("Details pane loaded");
 
+    try {
     await page.waitForSelector('[aria-label="Today"]');
+    } catch {
+      log("No updates today");
+      return;
+    }
+    
     const todayActivities = await page.$$(
       '[aria-label="Today"] > div > div > div'
     );
