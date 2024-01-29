@@ -18,7 +18,9 @@ let history = [];
   }
 
   const browser = await puppeteer.launch({
-    headless: false,
+    args: ["--window-size=640,1600"],
+    defaultViewport: null,
+    headless: "new",
   });
   const page = await browser.newPage();
   await page.goto(process.env.SHAREPOINT);
