@@ -131,9 +131,10 @@ let history = [];
           url = t.url();
         await t.close();
 
-        const replacement = url.includes("file")
-          ? `the file **${content}**`
-          : `the folder **${content}**`;
+        const replacement =
+          url.includes("file") || content.includes(".")
+            ? `the file **${content}**`
+            : `the folder **${content}**`;
 
         text = replaceAt(text, content, idx, replacement);
         if (deleted) {
