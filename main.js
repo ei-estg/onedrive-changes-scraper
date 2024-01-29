@@ -17,7 +17,9 @@ let history = [];
     });
   }
 
-  let browser = await puppeteer.launch({ headless: "new" });
+  const browser = await puppeteer.launch({
+    headless: false,
+  });
   const page = await browser.newPage();
   await page.goto(process.env.SHAREPOINT);
   await delay(500);
@@ -74,6 +76,13 @@ let history = [];
     });
   };
 
+  const replaceAt = (str, target, start, replacement) => {
+    const index = str.indexOf(target, start);
+    return index !== -1
+      ? str.slice(0, index) + replacement + str.slice(index + target.length)
+      : str;
+  };
+
   async function getUpdates() {
     await page.waitForSelector('[data-automationid="detailsPane"]');
     await page.click('[data-automationid="detailsPane"]');
@@ -83,36 +92,90 @@ let history = [];
     log("Details pane loaded");
 
     try {
-    await page.waitForSelector('[aria-label="Today"]');
+      await page.waitForSelector('[aria-label="Today"]');
     } catch {
-      log("No updates today");
+      log("No updates today yet");
       return;
     }
-    
     const todayActivities = await page.$$(
       '[aria-label="Today"] > div > div > div'
     );
 
     for (const activity of todayActivities) {
+      let deleted = false,
+        renamed = 0;
+
       const items = await activity.$$(".ms-ActivityItem-activityContent > div");
 
       let text = await page.evaluate((el) => el.textContent, items[0]);
+      if (text.includes("deleted")) deleted = true;
+      if (text.includes("rename")) renamed = 1;
+
+      let links = await items[0].$$("a");
+      let idx = 0;
+      for (const link of links) {
+        const content = await link.$eval("span", (el) => el.textContent.trim());
+
+        if (content.includes(".url")) continue;
+
+        await activity.scrollIntoView();
+
+        await page.keyboard.down("Control");
+        await link.click();
+        await page.keyboard.up("Control");
+
+        const pages = await browser.pages(),
+          t = pages[pages.length - 1],
+          url = t.url();
+        await t.close();
+
+        const replacement = url.includes("file")
+          ? `the file **${content}**`
+          : `the folder **${content}**`;
+
+        text = replaceAt(text, content, idx, replacement);
+        if (deleted) {
+          text = text.replace(/deleted (.*) from/, `deleted **$1** from`);
+          text = text.replace(content, `[${content}](${url})`);
+          break;
+        }
+
+        if (renamed == 1) {
+          renamed++;
+          continue;
+        }
+
+        text = replaceAt(text, content, idx, `[${content}](${url})`);
+        text = text.replace(/  /g, " ");
+        idx += replacement.length + url.length + 4;
+      }
 
       // name match
-      const nMatch = /^(.*?)\s*(?:create|delete|edit|rename|share)/i.exec(text);
+      const nMatch = /^(.*?)\s*(?:create|delete|edit|move|rename|share)/i.exec(
+        text
+      );
       let author = nMatch && nMatch[1];
       text = text.replace(author, "").trim();
       if (author == "You") author = name;
 
-      // translate some text elems
+      // uppercase first letter from text
+      text = text.charAt(0).toUpperCase() + text.slice(1);
+
+      // translate text elems to Portuguese
       const dict = [
-        ["created", "Criou"],
-        ["deleted", "Eliminou"],
-        ["edited", "Editou"],
-        ["from", "de"],
-        ["in", "na pasta"],
-        ["renamed", "Alterou o nome de"],
-        ["shared", "Partilhou"],
+        ["Created", "Criou"],
+        ["Deleted", "Eliminou"],
+        ["Edited", "Editou"],
+        ["Moved", "Moveu"],
+        ["Renamed", "Alterou o nome"],
+        ["Shared", "Partilhou"],
+
+        ["in the folder", "na pasta"],
+        ["from the folder", "da pasta"],
+        ["the folder", "a pasta"],
+
+        ["the file", "o ficheiro"],
+
         ["to", "para"],
       ];
       dict.forEach(([original, word]) => {
@@ -121,7 +184,10 @@ let history = [];
       });
 
       let date = await page.evaluate((el) => el.textContent, items[1]);
-      if (date.includes("About") || date.includes("Yesterday")) return;
+      date = date.replace("A few seconds ago", "1 s");
+      date = date.replace("About a minute ago", "1 m");
+      date = date.replace("About an hour ago", "1 h");
+      if (date.includes("Yesterday")) return;
       const timestamp = formatISO(
         sub(new Date(), {
           [date.split(" ")[1].toLowerCase()]: parseInt(date),
@@ -138,6 +204,7 @@ let history = [];
   await getUpdates();
 
   setInterval(async () => {
+    log("Reloading page");
     await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
     getUpdates();
   }, process.env.INTERVAL * 60000);
