@@ -148,9 +148,9 @@ let history = [];
         }
 
         text = replaceAt(text, content, idx, `[${content}](${url})`);
-        text = text.replace(/  /g, " ");
         idx += replacement.length + url.length + 4;
       }
+      text = text.replace(/  /g, " ");
 
       // name match
       const nMatch = /^(.*?)\s*(?:create|delete|edit|move|rename|share)/i.exec(
