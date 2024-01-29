@@ -79,9 +79,9 @@ let history = [];
   };
 
   const replaceAt = (str, target, start, replacement) => {
-    const index = str.indexOf(target, start);
-    return index !== -1
-      ? str.slice(0, index) + replacement + str.slice(index + target.length)
+    const idx = str.indexOf(target, start);
+    return idx !== -1
+      ? str.slice(0, idx) + replacement + str.slice(idx + target.length)
       : str;
   };
 
@@ -135,8 +135,8 @@ let history = [];
           url.includes("file") || content.includes(".")
             ? `the file **${content}**`
             : `the folder **${content}**`;
-
         text = replaceAt(text, content, idx, replacement);
+
         if (deleted) {
           text = text.replace(/deleted (.*) from/, `deleted **$1** from`);
           text = text.replace(content, `[${content}](${url})`);
@@ -151,6 +151,7 @@ let history = [];
         text = replaceAt(text, content, idx, `[${content}](${url})`);
         idx += replacement.length + url.length + 4;
       }
+      
       text = text.replace(/  /g, " ");
 
       // name match
