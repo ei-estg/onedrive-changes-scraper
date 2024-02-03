@@ -64,18 +64,6 @@ let history = [];
       : "https://cdn.discordapp.com/attachments/1045218965439389698/1199670717378203658/u.png?ex=65c3636b&is=65b0ee6b&hm=03cc6d239ea38d15bf0d9aec6ca0b91ca055a3f50a36e998a0fee3b2177c57df&";
   };
 
-  const sendDiscordEmbed = (author, msg, timestamp) => {
-    fetch(process.env.DISCORD_WEBHOOK, {
-      headers: {
-        "content-type": "application/json",
-      },
-      body: `{"embeds":[{"description":"${msg}","color":2664682,"author":{"name":"${author}","url":"https://ipvcpt-my.sharepoint.com/personal/amatossousa_ipvc_pt/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Famatossousa%5Fipvc%5Fpt%2FDocuments%2FEI%5FESTG%5FIPVC&ga=1","icon_url":"${customIcon(
-        author
-      )}"},"timestamp":"${timestamp}"}],"username":"OneDrive EI","avatar_url":"https://cdn.discordapp.com/attachments/1045218965439389698/1199729748234997895/o.png?ex=65c39a65&is=65b12565&hm=34986c78561219d35fb0165badf1442ae378273a47f2eb77f72ffa8a4d6f6bc9&"}`,
-      method: "POST",
-    });
-  };
-
   const replaceAt = (str, target, start, replacement) => {
     const idx = str.indexOf(target, start);
     return idx !== -1
@@ -100,6 +88,18 @@ let history = [];
 
     // unix timestamp: date.getTime()
     return date.toISOString();
+  };
+
+  const sendDiscordEmbed = (author, msg, timestamp) => {
+    fetch(process.env.DISCORD_WEBHOOK, {
+      headers: {
+        "content-type": "application/json",
+      },
+      body: `{"embeds":[{"description":"${msg}","color":2664682,"author":{"name":"${author}","url":"https://ipvcpt-my.sharepoint.com/personal/amatossousa_ipvc_pt/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Famatossousa%5Fipvc%5Fpt%2FDocuments%2FEI%5FESTG%5FIPVC&ga=1","icon_url":"${customIcon(
+        author
+      )}"},"timestamp":"${timestamp}"}],"username":"OneDrive EI","avatar_url":"https://cdn.discordapp.com/attachments/1045218965439389698/1199729748234997895/o.png?ex=65c39a65&is=65b12565&hm=34986c78561219d35fb0165badf1442ae378273a47f2eb77f72ffa8a4d6f6bc9&"}`,
+      method: "POST",
+    });
   };
 
   async function getUpdates() {
