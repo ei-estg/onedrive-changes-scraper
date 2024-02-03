@@ -120,7 +120,7 @@ let history = [];
       '[aria-label="Today"] > div > div > div'
     );
 
-    for (const activity of todayActivities) {
+    for (const activity of todayActivities.reverse()) {
       let deleted = false,
         renamed = 0;
 
@@ -136,7 +136,7 @@ let history = [];
         const content = await link.$eval("span", (el) => el.textContent.trim());
 
         if (content.includes(".url")) continue; // ignore .url files
-        
+
         await activity.scrollIntoView(); // this isn't doing jack
 
         await page.keyboard.down("Control");
