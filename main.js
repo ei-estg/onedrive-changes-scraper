@@ -1,6 +1,5 @@
 const puppeteer = require("puppeteer");
 require("dotenv").config();
-const { sub, formatISO } = require("date-fns");
 
 const verbose = process.env.VERBOSE;
 const log = (msg) => {
@@ -82,6 +81,25 @@ let history = [];
     return idx !== -1
       ? str.slice(0, idx) + replacement + str.slice(idx + target.length)
       : str;
+  };
+
+  const parseTimeAgo = (str) => {
+    str = str.replace("A few seconds", "30 seconds");
+    str = str.replace("About a minute", "1 minute");
+    str = str.replace("About an hour", "1 hour");
+
+    const now = new Date();
+    const date = new Date(now.getTime());
+
+    if (str.includes("second"))
+      date.setSeconds(date.getSeconds() - parseInt(str));
+    else if (str.includes("minute"))
+      date.setMinutes(date.getMinutes() - parseInt(str));
+    else if (str.includes("hour"))
+      date.setHours(date.getHours() - parseInt(str));
+
+    // unix timestamp: date.getTime()
+    return date.toISOString();
   };
 
   async function getUpdates() {
@@ -191,15 +209,8 @@ let history = [];
       });
 
       let date = await page.evaluate((el) => el.textContent, items[1]);
-      date = date.replace("A few seconds", "1s");
-      date = date.replace("About a minute", "1m");
-      date = date.replace("About an hour", "1h");
       if (date.includes("Yesterday")) return;
-      const timestamp = formatISO(
-        sub(new Date(), {
-          [date.split(" ")[1].toLowerCase()]: parseInt(date),
-        })
-      );
+      const timestamp = parseTimeAgo(date);
 
       if (history.includes(`${author}${text}`)) return;
 
