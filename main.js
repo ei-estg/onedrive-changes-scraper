@@ -58,12 +58,11 @@ let history = [];
       ["Marco Porto", 50577988],
       ["Matthew Rodrigues", 38044816],
     ];
-    if (avatars.some((avatar) => avatar[0] == name))
-      return `https://avatars.githubusercontent.com/u/${
-        avatars.find((avatar) => avatar[0] == name)[1]
-      }?s=100&v=4`;
-    else
-      return "https://cdn.discordapp.com/attachments/1045218965439389698/1199670717378203658/u.png?ex=65c3636b&is=65b0ee6b&hm=03cc6d239ea38d15bf0d9aec6ca0b91ca055a3f50a36e998a0fee3b2177c57df&";
+    return avatars.some((avatar) => avatar[0] == name)
+      ? `https://avatars.githubusercontent.com/u/${
+          avatars.find((avatar) => avatar[0] == name)[1]
+        }?s=100&v=4`
+      : "https://cdn.discordapp.com/attachments/1045218965439389698/1199670717378203658/u.png?ex=65c3636b&is=65b0ee6b&hm=03cc6d239ea38d15bf0d9aec6ca0b91ca055a3f50a36e998a0fee3b2177c57df&";
   };
 
   const sendDiscordEmbed = (author, msg, timestamp) => {
@@ -132,9 +131,11 @@ let history = [];
         await t.close();
 
         const replacement =
-          url.includes("file") || content.includes(".")
-            ? `the file **${content}**`
-            : `the folder **${content}**`;
+          renamed !== 2
+            ? url.includes("file") || content.includes(".")
+              ? `the file **${content}**`
+              : `the folder **${content}**`
+            : `**${content}**`;
         text = replaceAt(text, content, idx, replacement);
 
         if (deleted) {
@@ -151,7 +152,6 @@ let history = [];
         text = replaceAt(text, content, idx, `[${content}](${url})`);
         idx += replacement.length + url.length + 4;
       }
-      
       text = text.replace(/  /g, " ");
 
       // name match
@@ -166,7 +166,7 @@ let history = [];
       text = text.charAt(0).toUpperCase() + text.slice(1);
 
       // translate text elems to Portuguese
-      const dict = [
+       const dict = [
         ["Created", "Criou"],
         ["Deleted", "Eliminou"],
         ["Edited", "Editou"],
