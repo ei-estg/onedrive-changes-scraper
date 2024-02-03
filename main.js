@@ -117,9 +117,9 @@ let history = [];
       for (const link of links) {
         const content = await link.$eval("span", (el) => el.textContent.trim());
 
-        if (content.includes(".url")) continue;
-
-        await activity.scrollIntoView();
+        if (content.includes(".url")) continue; // ignore .url files
+        
+        await activity.scrollIntoView(); // this isn't doing jack
 
         await page.keyboard.down("Control");
         await link.click();
@@ -166,12 +166,15 @@ let history = [];
       text = text.charAt(0).toUpperCase() + text.slice(1);
 
       // translate text elems to Portuguese
-       const dict = [
+      const dict = [
         ["Created", "Criou"],
         ["Deleted", "Eliminou"],
         ["Edited", "Editou"],
         ["Moved", "Moveu"],
-        ["Renamed", "Alterou o nome"],
+
+        ["Renamed the file", "Alterou o nome do ficheiro"],
+        ["Renamed the folder", "Alterou o nome da pasta"],
+
         ["Shared", "Partilhou"],
 
         ["in the folder", "na pasta"],
@@ -188,9 +191,9 @@ let history = [];
       });
 
       let date = await page.evaluate((el) => el.textContent, items[1]);
-      date = date.replace("A few seconds ago", "1 s");
-      date = date.replace("About a minute ago", "1 m");
-      date = date.replace("About an hour ago", "1 h");
+      date = date.replace("A few seconds", "1s");
+      date = date.replace("About a minute", "1m");
+      date = date.replace("About an hour", "1h");
       if (date.includes("Yesterday")) return;
       const timestamp = formatISO(
         sub(new Date(), {
