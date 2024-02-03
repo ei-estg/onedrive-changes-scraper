@@ -127,6 +127,18 @@ let history = [];
       const items = await activity.$$(".ms-ActivityItem-activityContent > div");
 
       let text = await page.evaluate((el) => el.textContent, items[0]);
+
+      // name match
+      const nMatch = /^(.*?)\s*(?:create|delete|edit|move|rename|share)/i.exec(
+        text
+      );
+      let author = nMatch && nMatch[1];
+      text = text.replace(author, "").trim();
+      if (author == "You") author = name;
+
+      if (history.includes(`${author}${text}`)) return;
+      history.push(`${author}${text}`);
+
       if (text.includes("deleted")) deleted = true;
       if (text.includes("rename")) renamed = 1;
 
@@ -172,14 +184,6 @@ let history = [];
       }
       text = text.replace(/  /g, " ");
 
-      // name match
-      const nMatch = /^(.*?)\s*(?:create|delete|edit|move|rename|share)/i.exec(
-        text
-      );
-      let author = nMatch && nMatch[1];
-      text = text.replace(author, "").trim();
-      if (author == "You") author = name;
-
       // uppercase first letter from text
       text = text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -209,14 +213,11 @@ let history = [];
       });
 
       let date = await page.evaluate((el) => el.textContent, items[1]);
-      if (date.includes("Yesterday")) return;
+      if (date.includes("Yesterday")) continue;
       const timestamp = parseTimeAgo(date);
-
-      if (history.includes(`${author}${text}`)) return;
 
       log(`Sending embed: ${author} - ${text}`);
       sendDiscordEmbed(author, text, timestamp);
-      history.push(`${author}${text}`);
     }
   }
   await getUpdates();
