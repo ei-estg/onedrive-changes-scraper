@@ -56,6 +56,7 @@ let history = [];
       ["João Alves", 59509896],
       ["Marco Porto", 50577988],
       ["Matthew Rodrigues", 38044816],
+      ["Rodrigo Sá", 22347167],
     ];
     return avatars.some((avatar) => avatar[0] == name)
       ? `https://avatars.githubusercontent.com/u/${
