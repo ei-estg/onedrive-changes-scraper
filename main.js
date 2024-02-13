@@ -10,7 +10,11 @@ let history = [];
 (async () => {
   async function delay(time) {
     log(`Waiting for navigation + ${time}ms`);
-    await page.waitForNavigation();
+    try {
+      await page.waitForNavigation();
+    } catch {
+      log("No navigation to wait for?");
+    }
     return new Promise(function (res) {
       setTimeout(res, time);
     });
@@ -19,7 +23,7 @@ let history = [];
   const browser = await puppeteer.launch({
     args: ["--window-size=640,1600"],
     defaultViewport: null,
-    headless: "new",
+    headless: false,
   });
   const page = await browser.newPage();
   await page.goto(process.env.SHAREPOINT);
@@ -28,17 +32,17 @@ let history = [];
   // login if not logged in
   if (await page.$("#loginHeader > div")) {
     log("Logging in");
-    log("Entered email");
     await page.type("#i0116", process.env.EMAIL);
+    log("Entered email");
     await page.click("#idSIButton9");
-
     await delay(500);
-    log("Entered password");
+
     await page.type("#i0118", process.env.PASSWORD);
+    log("Entered password");
     await page.click("#idSIButton9");
+    await delay(500);
 
     // "Stay signed in?" prompt
-    await delay(500);
     await page.click("#idSIButton9");
   }
 
@@ -104,121 +108,128 @@ let history = [];
   };
 
   async function getUpdates() {
-    await page.waitForSelector('[data-automationid="detailsPane"]');
-    await page.click('[data-automationid="detailsPane"]');
-    log("Opened details pane");
-
-    await page.waitForSelector(".od-ItemActivityFeed");
-    log("Details pane loaded");
-
     try {
-      await page.waitForSelector('[aria-label="Today"]');
-    } catch {
-      log("No updates today yet");
-      return;
-    }
-    const todayActivities = await page.$$(
-      '[aria-label="Today"] > div > div > div'
-    );
+      await page.waitForSelector('[data-automationid="detailsPane"]');
+      await page.click('[data-automationid="detailsPane"]');
+      log("Opened details pane");
 
-    for (const activity of todayActivities.reverse()) {
-      let deleted = false,
-        renamed = 0;
+      await page.waitForSelector(".od-ItemActivityFeed");
+      log("Details pane loaded");
 
-      const items = await activity.$$(".ms-ActivityItem-activityContent > div");
-
-      let text = await page.evaluate((el) => el.textContent, items[0]);
-
-      // name match
-      const nMatch = /^(.*?)\s*(?:create|delete|edit|move|rename|share)/i.exec(
-        text
-      );
-      let author = nMatch && nMatch[1];
-      text = text.replace(author, "").trim();
-      if (author == "You") author = name;
-
-      if (history.includes(`${author}${text}`)) return;
-      history.push(`${author}${text}`);
-
-      if (text.includes("deleted")) deleted = true;
-      if (text.includes("rename")) renamed = 1;
-
-      let links = await items[0].$$("a");
-      let idx = 0;
-      for (const link of links) {
-        const content = await link.$eval("span", (el) => el.textContent.trim());
-
-        if (content.includes(".url")) continue; // ignore .url files
-
-        await activity.scrollIntoView(); // this isn't doing jack
-
-        await page.keyboard.down("Control");
-        await link.click();
-        await page.keyboard.up("Control");
-
-        const pages = await browser.pages(),
-          t = pages[pages.length - 1],
-          url = t.url();
-        await t.close();
-
-        const replacement =
-          renamed !== 2
-            ? url.includes("file") || content.includes(".")
-              ? `the file **${content}**`
-              : `the folder **${content}**`
-            : `**${content}**`;
-        text = replaceAt(text, content, idx, replacement);
-
-        if (deleted) {
-          text = text.replace(/deleted (.*) from/, `deleted **$1** from`);
-          text = text.replace(content, `[${content}](${url})`);
-          break;
-        }
-
-        if (renamed == 1) {
-          renamed++;
-          continue;
-        }
-
-        text = replaceAt(text, content, idx, `[${content}](${url})`);
-        idx += replacement.length + url.length + 4;
+      try {
+        await page.waitForSelector('[aria-label="Today"]');
+      } catch {
+        log("No updates today yet");
+        return;
       }
-      text = text.replace(/  /g, " ");
+      const todayActivities = await page.$$(
+        '[aria-label="Today"] > div > div > div'
+      );
 
-      // uppercase first letter from text
-      text = text.charAt(0).toUpperCase() + text.slice(1);
+      for (const activity of todayActivities.reverse()) {
+        let deleted = false,
+          renamed = 0;
 
-      // translate text elems to Portuguese
-      const dict = [
-        ["Created", "Criou"],
-        ["Deleted", "Eliminou"],
-        ["Edited", "Editou"],
-        ["Moved", "Moveu"],
+        const items = await activity.$$(
+          ".ms-ActivityItem-activityContent > div"
+        );
 
-        ["Renamed the file", "Alterou o nome do ficheiro"],
-        ["Renamed the folder", "Alterou o nome da pasta"],
+        let text = await page.evaluate((el) => el.textContent, items[0]);
 
-        ["Shared", "Partilhou"],
+        // name match
+        const nMatch =
+          /^(.*?)\s*(?:create|delete|edit|move|rename|share)/i.exec(text);
+        let author = nMatch && nMatch[1];
+        text = text.replace(author, "").trim();
+        if (author == "You") author = name;
 
-        ["in the folder", "na pasta"],
-        ["from the folder", "da pasta"],
-        ["the folder", "a pasta"],
+        if (history.includes(`${author}${text}`)) return;
+        history.push(`${author}${text}`);
 
-        ["the file", "o ficheiro"],
+        if (text.includes("deleted")) deleted = true;
+        if (text.includes("rename")) renamed = 1;
 
-        ["to", "para"],
-      ];
-      dict.forEach(([original, word]) => {
-        const regex = new RegExp(`\\b${original}\\b`, "gi");
-        text = text.replace(regex, word);
-      });
+        let links = await items[0].$$("a");
+        let idx = 0;
+        for (const link of links) {
+          const content = await link.$eval("span", (el) =>
+            el.textContent.trim()
+          );
 
-      let date = await page.evaluate((el) => el.textContent, items[1]);
-      if (date.includes("Yesterday")) continue;
-      const timestamp = parseTimeAgo(date);
+          if (content.includes(".url")) continue; // ignore .url files
 
-      log(`Sending embed: ${author} - ${text}`);
-      sendDiscordEmbed(author, text, timestamp);
+          await activity.scrollIntoView(); // this isn't doing jack
+
+          await page.keyboard.down("Control");
+          await link.click();
+          await page.keyboard.up("Control");
+
+          const pages = await browser.pages(),
+            t = pages[pages.length - 1],
+            url = t.url();
+          await t.close();
+
+          const replacement =
+            renamed !== 2
+              ? url.includes("file") || content.includes(".")
+                ? `the file **${content}**`
+                : `the folder **${content}**`
+              : `**${content}**`;
+          text = replaceAt(text, content, idx, replacement);
+
+          if (deleted) {
+            text = text.replace(/deleted (.*) from/, `deleted **$1** from`);
+            text = text.replace(content, `[${content}](${url})`);
+            break;
+          }
+
+          if (renamed == 1) {
+            renamed++;
+            continue;
+          }
+
+          text = replaceAt(text, content, idx, `[${content}](${url})`);
+          idx += replacement.length + url.length + 4;
+        }
+        text = text.replace(/  /g, " ");
+
+        // uppercase first letter from text
+        text = text.charAt(0).toUpperCase() + text.slice(1);
+
+        // translate text elems to Portuguese
+        const dict = [
+          ["Created", "Criou"],
+          ["Deleted", "Eliminou"],
+          ["Edited", "Editou"],
+          ["Moved", "Moveu"],
+
+          ["Renamed the file", "Alterou o nome do ficheiro"],
+          ["Renamed the folder", "Alterou o nome da pasta"],
+
+          ["Shared", "Partilhou"],
+
+          ["in the folder", "na pasta"],
+          ["from the folder", "da pasta"],
+          ["the folder", "a pasta"],
+
+          ["the file", "o ficheiro"],
+
+          ["to", "para"],
+        ];
+        dict.forEach(([original, word]) => {
+          const regex = new RegExp(`\\b${original}\\b`, "gi");
+          text = text.replace(regex, word);
+        });
+
+        let date = await page.evaluate((el) => el.textContent, items[1]);
+        if (date.includes("Yesterday")) continue;
+        const timestamp = parseTimeAgo(date);
+
+        log(`Sending embed: ${author} - ${text}`);
+        sendDiscordEmbed(author, text, timestamp);
+      }
+    } catch (e) {
+      log("Error (Most likely internet connection issue): " + e);
     }
   }
   await getUpdates();
