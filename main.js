@@ -8,14 +8,14 @@ const log = (msg) => {
 let history = [];
 
 (async () => {
-  async function delay(time) {
+  const delay = async (time) => {
     log(`Waiting for navigation + ${time}ms`);
     try {
       await page.waitForNavigation();
     } catch {
       log("No navigation to wait for?");
     }
-    return new Promise(function (res) {
+    return new Promise((res) => {
       setTimeout(res, time);
     });
   }
@@ -158,8 +158,6 @@ let history = [];
 
           if (content.includes(".url")) continue; // ignore .url files
 
-          await activity.scrollIntoView(); // this isn't doing jack
-
           await page.keyboard.down("Control");
           await link.click();
           await page.keyboard.up("Control");
@@ -236,7 +234,11 @@ let history = [];
 
   setInterval(async () => {
     log("Reloading page");
-    await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
+    try {
+      await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
+    } catch (e) {
+      log("Error (Most likely internet connection issue): " + e);
+    }
     getUpdates();
   }, process.env.INTERVAL * 60000);
 })();
