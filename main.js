@@ -143,7 +143,9 @@ let history = [];
         text = text.replace(author, "").trim();
         if (author == "You") author = name;
 
-        if (history.includes(`${author}${text}`)) return;
+        log(`context: ${author}${text}`);
+        log("in history?: " + history.includes(`${author}${text}`));
+        if (history.includes(`${author}${text}`)) continue;
         history.push(`${author}${text}`);
 
         if (text.includes("deleted")) deleted = true;
@@ -152,9 +154,7 @@ let history = [];
         let links = await items[0].$$("a");
         let idx = 0;
         for (const link of links) {
-          const content = await link.$eval("span", (el) =>
-            el.title
-          );
+          const content = await link.$eval("span", (el) => el.title);
 
           if (content.includes(".url")) continue; // ignore .url files
 
