@@ -18,12 +18,12 @@ let history = [];
     return new Promise((res) => {
       setTimeout(res, time);
     });
-  }
+  };
 
   const browser = await puppeteer.launch({
     args: ["--force-device-scale-factor=0.4", "--window-size=640,2000"],
     defaultViewport: null,
-    headless: "new",
+    headless: process.env.DEBUG == "true" ? false : "new",
   });
   const page = await browser.newPage();
   await page.goto(process.env.SHAREPOINT);
