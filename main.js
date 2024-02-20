@@ -153,7 +153,7 @@ let history = [];
         let idx = 0;
         for (const link of links) {
           const content = await link.$eval("span", (el) =>
-            el.textContent.trim()
+            el.title
           );
 
           if (content.includes(".url")) continue; // ignore .url files
