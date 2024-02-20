@@ -143,8 +143,6 @@ let history = [];
         text = text.replace(author, "").trim();
         if (author == "You") author = name;
 
-        log(`context: ${author}${text}`);
-        log("in history?: " + history.includes(`${author}${text}`));
         if (history.includes(`${author}${text}`)) continue;
         history.push(`${author}${text}`);
 
