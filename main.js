@@ -68,21 +68,6 @@ const waitForSelector = async (page, selector) => {
   );
   log(`Logged in as ${name}`);
 
-  const customIcon = (name) => {
-    const avatars = [
-      ["André Sousa", 47536659],
-      ["João Alves", 59509896],
-      ["Marco Porto", 50577988],
-      ["Matthew Rodrigues", 38044816],
-      ["Rodrigo Sá", 22347167],
-    ];
-    return avatars.some((avatar) => avatar[0] == name)
-      ? `https://avatars.githubusercontent.com/u/${
-          avatars.find((avatar) => avatar[0] == name)[1]
-        }?s=100&v=4`
-      : "https://cdn.discordapp.com/attachments/1045218965439389698/1199670717378203658/u.png?ex=65c3636b&is=65b0ee6b&hm=03cc6d239ea38d15bf0d9aec6ca0b91ca055a3f50a36e998a0fee3b2177c57df&";
-  };
-
   const replaceAt = (str, target, start, replacement) => {
     const idx = str.indexOf(target, start);
     return idx !== -1
@@ -107,6 +92,21 @@ const waitForSelector = async (page, selector) => {
 
     // unix timestamp: date.getTime()
     return date.toISOString();
+  };
+
+  const customIcon = (name) => {
+    const avatars = [
+      ["André Sousa", 47536659],
+      ["João Alves", 59509896],
+      ["Marco Porto", 50577988],
+      ["Matthew Rodrigues", 38044816],
+      ["Rodrigo Sá", 22347167],
+    ];
+    return avatars.some((avatar) => avatar[0] == name)
+      ? `https://avatars.githubusercontent.com/u/${
+          avatars.find((avatar) => avatar[0] == name)[1]
+        }?s=100&v=4`
+      : "https://cdn.discordapp.com/attachments/1045218965439389698/1199670717378203658/u.png?ex=65c3636b&is=65b0ee6b&hm=03cc6d239ea38d15bf0d9aec6ca0b91ca055a3f50a36e998a0fee3b2177c57df&";
   };
 
   const sendDiscordEmbed = (author, msg, timestamp) => {
