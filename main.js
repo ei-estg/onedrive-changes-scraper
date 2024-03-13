@@ -100,6 +100,7 @@ const waitForSelector = async (page, selector) => {
       ["João Alves", 59509896],
       ["Marco Porto", 50577988],
       ["Matthew Rodrigues", 38044816],
+      ["Pedro Cunha", 72658683],
       ["Rodrigo Sá", 22347167],
     ];
     return avatars.some((avatar) => avatar[0] == name)
