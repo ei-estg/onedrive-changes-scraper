@@ -7,6 +7,19 @@ const log = (msg) => {
 };
 let history = [];
 
+const waitForSelector = async (page, selector) => {
+  try {
+    const startTime = Date.now();
+
+    const element = await page.waitForSelector(selector);
+    log(`Selected ${selector} element within ${Date.now() - startTime} ms`);
+
+    return element;
+  } catch (error) {
+    log(`\x1b[31mWaiting for selector ${selector} failed\x1b[0m`);
+  }
+};
+
 (async () => {
   const delay = async (time) => {
     log(`Waiting for navigation + ${time}ms`);
@@ -47,7 +60,7 @@ let history = [];
   }
 
   let name = "";
-  await page.waitForSelector("#O365_MainLink_Me");
+  await waitForSelector("#O365_MainLink_Me");
   name = await page.evaluate(
     (el) => el.textContent.slice(0, -2),
     await page.$("#O365_MainLink_Me")
@@ -109,15 +122,15 @@ let history = [];
 
   async function getUpdates() {
     try {
-      await page.waitForSelector('[data-automationid="detailsPane"]');
+      await waitForSelector('[data-automationid="detailsPane"]');
       await page.click('[data-automationid="detailsPane"]');
       log("Opened details pane");
 
-      await page.waitForSelector(".od-ItemActivityFeed");
+      await waitForSelector(".od-ItemActivityFeed");
       log("Details pane loaded");
 
       try {
-        await page.waitForSelector('[aria-label="Today"]');
+        await waitForSelector('[aria-label="Today"]');
       } catch {
         log("No updates today yet");
         return;
