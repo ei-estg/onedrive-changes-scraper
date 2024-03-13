@@ -61,7 +61,7 @@ const waitForSelector = async (page, selector) => {
   }
 
   let name = "";
-  await waitForSelector("#O365_MainLink_Me");
+  await waitForSelector(page, "#O365_MainLink_Me");
   name = await page.evaluate(
     (el) => el.textContent.slice(0, -2),
     await page.$("#O365_MainLink_Me")
@@ -124,15 +124,15 @@ const waitForSelector = async (page, selector) => {
 
   async function getUpdates() {
     try {
-      await waitForSelector('[data-automationid="detailsPane"]');
+      await waitForSelector(page, '[data-automationid="detailsPane"]');
       await page.click('[data-automationid="detailsPane"]');
       log("Opened details pane");
 
-      await waitForSelector(".od-ItemActivityFeed");
+      await waitForSelector(page, ".od-ItemActivityFeed");
       log("Details pane loaded");
 
       try {
-        await waitForSelector('[aria-label="Today"]');
+        await waitForSelector(page, '[aria-label="Today"]');
       } catch {
         log("No updates today yet");
         return;
