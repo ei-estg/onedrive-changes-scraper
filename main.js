@@ -169,16 +169,19 @@ const waitForSelector = async (page, selector) => {
         for (const link of links) {
           const content = await link.$eval("span", (el) => el.title);
 
-          if (content.includes(".url")) continue; // ignore .url files
+          let url = "";
 
-          await page.keyboard.down("Control");
-          await link.click();
-          await page.keyboard.up("Control");
+          // ignore .url and .zip files
+          if (!/\.(url|zip)/.test(content)) {
+            await page.keyboard.down("Control");
+            await link.click();
+            await page.keyboard.up("Control");
 
-          const pages = await browser.pages(),
-            t = pages[pages.length - 1],
+            const pages = await browser.pages(),
+              t = pages[pages.length - 1];
             url = t.url();
-          await t.close();
+            await t.close();
+          }
 
           const replacement =
             renamed !== 2
@@ -199,7 +202,12 @@ const waitForSelector = async (page, selector) => {
             continue;
           }
 
-          text = replaceAt(text, content, idx, `[${content}](${url})`);
+          text = replaceAt(
+            text,
+            content,
+            idx,
+            url ? `[${content}](${url})` : `**${content}**`
+          );
           idx += replacement.length + url.length + 4;
         }
         text = text.replace(/  /g, " ");
