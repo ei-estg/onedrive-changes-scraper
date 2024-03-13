@@ -36,6 +36,7 @@ const waitForSelector = async (page, selector) => {
   const browser = await puppeteer.launch({
     args: ["--force-device-scale-factor=0.4", "--window-size=640,2000"],
     defaultViewport: null,
+    executablePath: process.env.BROWSER || undefined,
     headless: process.env.DEBUG == "true" ? false : "new",
   });
   const page = await browser.newPage();
