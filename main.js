@@ -1,11 +1,20 @@
-const puppeteer = require("puppeteer");
+const os = require("os");
 require("dotenv").config();
+const puppeteer = require("puppeteer");
 
-const verbose = process.env.VERBOSE;
 const log = (msg) => {
-  if (verbose) console.log(`${new Date().toISOString()}: ${msg}\n`);
+  if (process.env.VERBOSE) console.log(`${new Date().toISOString()}: ${msg}\n`);
 };
-let history = [];
+
+// Delete puppeteer profiles from tmp directory to free up space
+// github.com/stefanzweifel/sidecar-browsershot/pull/54/files
+if (os.platform() === "linux") {
+  fs.readdirSync("/tmp").forEach((file) => {
+    if (file.startsWith("puppeteer_dev_chrome_profile"))
+      fs.rmdirSync(`/tmp/${file}`, { recursive: true });
+  });
+  log("Deleted puppeteer cache /tmp");
+}
 
 const waitForSelector = async (page, selector) => {
   try {
@@ -122,6 +131,7 @@ const waitForSelector = async (page, selector) => {
     });
   };
 
+  let history = [];
   async function getUpdates() {
     try {
       await waitForSelector(page, '[data-automationid="detailsPane"]');
