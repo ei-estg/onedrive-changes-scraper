@@ -56,8 +56,13 @@ const waitForSelector = async (page, selector) => {
   });
 
   // set download path
-  const client = await browser.target().createCDPSession();
   const bakPath = process.env.BACKUP_DIR;
+  if (!fs.existsSync(bakPath)) {
+    fs.mkdirSync(bakPath, { recursive: true });
+    log(`Created backup directory: ${bakPath}`, 1);
+  }
+
+  const client = await browser.target().createCDPSession();
   await client.send("Browser.setDownloadBehavior", {
     behavior: "allowAndName",
     downloadPath: bakPath,
