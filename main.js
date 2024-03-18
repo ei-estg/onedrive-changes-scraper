@@ -17,7 +17,7 @@ const err = (msg, forced) => {
 if (os.platform() === "linux") {
   fs.readdirSync("/tmp").forEach((file) => {
     if (file.startsWith("puppeteer_dev_chrome_profile"))
-      fs.rmdirSync(`/tmp/${file}`, { recursive: true });
+      fs.rm(`/tmp/${file}`, { recursive: true });
   });
   log("Deleted puppeteer cache /tmp", 1);
 }
