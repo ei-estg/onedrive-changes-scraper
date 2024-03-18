@@ -317,7 +317,7 @@ const waitForSelector = async (page, selector) => {
         await waitForSelector(page, '[data-automationid="downloadCommand"]');
 
         const files = fs.readdirSync(bakPath);
-        if (files.length >= process.env.BACKUP_QNTY) {
+        if (files.length > process.env.BACKUP_QNTY) {
           const oldest = files.sort((a, b) => a - b)[0];
           fs.unlinkSync(`${bakPath}/${oldest}`);
           log(`Replaced oldest backup: ${oldest}`, 1);
