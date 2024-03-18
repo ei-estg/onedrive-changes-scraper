@@ -4,10 +4,9 @@ const puppeteer = require("puppeteer");
 const cron = require("node-cron");
 
 const log = (msg, forced) => {
-  if (process.env.VERBOSE || forced)
+  if (process.env.VERBOSE !== "false" || forced)
     console.log(`${new Date().toISOString()}: ${msg}\n`);
 };
-
 const err = (msg, forced) => {
   log(`\x1b[31m${msg}\x1b[0m`, forced);
 };
@@ -259,38 +258,38 @@ const waitForSelector = async (page, selector) => {
         if (date.includes("Yesterday")) continue;
         const timestamp = parseTimeAgo(date);
 
-        log(`Sending embed: ${author} - ${text}`);
+        log(`Sending embed: ${author} - ${text}`, 1);
         sendDiscordEmbed(author, text, timestamp);
       }
     } catch (e) {
-      err("Error (Most likely internet connection issue): " + e);
+      err("Error (Most likely internet connection issue): " + e, 1);
     }
   }
   await getUpdates();
 
-  setInterval(async () => {
-    log("Reloading page");
+  cron.schedule(process.env.INTERVAL, async () => {
+    log("Reloading page", 1);
     try {
       await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
     } catch (e) {
-      err("Error (Most likely internet connection issue): " + e);
+      err("Error (Most likely internet connection issue): " + e, 1);
     }
     getUpdates();
-  }, process.env.INTERVAL * 60000);
+  });
+
+  if (process.env.BACKUP !== "false") {
+    if (process.env.BACKUP_QNTY < 1)
+      return err(
+        "'BACKUP_QNTY' var can't be 0. The script will skip the backup procedure.",
+        1
+      );
+    else if (process.env.BACKUP_QNTY == 1)
+      err(
+        `'BACKUP_QNTY' var is set to 1! The script WILL overwrite the ONLY backup if not stopped beforehand. Proceed cautiously!!`,
+        1
+      );
+    cron.schedule(process.env.BACKUP_FREQ, () => {
+      log("Backup!");
+    });
+  }
 })();
-
-if (process.env.BACKUP)
-  if (process.env.BACKUP_QNTY < 1)
-    err(
-      "'BACKUP_QNTY' var can't be 0. The script will skip the backup procedure.",
-      1
-    );
-  else if (process.env.BACKUP_QNTY == 1)
-    err(
-      `'BACKUP_QNTY' var is set to 1! The script WILL overwrite the ONLY backup if not stopped beforehand. Proceed cautiously!!`,
-      1
-    );
-
-cron.schedule(process.env.BACKUP_FREQ, () => {
-  log("Backup!");
-});
