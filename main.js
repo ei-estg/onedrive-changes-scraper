@@ -17,7 +17,9 @@ const err = (msg, forced) => {
 if (os.platform() === "linux") {
   fs.readdirSync("/tmp").forEach((file) => {
     if (file.startsWith("puppeteer_dev_chrome_profile"))
-      fs.rm(`/tmp/${file}`, { recursive: true });
+      fs.rm(`/tmp/${file}`, { recursive: true }, (err) => {
+        if (err) err(`Couldn't delete profile: ${err}`);
+      });
   });
   log("Deleted puppeteer cache /tmp", 1);
 }
@@ -55,13 +57,13 @@ const waitForSelector = async (page, selector) => {
     headless: process.env.DEBUG == "true" ? false : "new",
   });
 
-  // set download path
   const bakPath = process.env.BACKUP_DIR;
   if (!fs.existsSync(bakPath)) {
     fs.mkdirSync(bakPath, { recursive: true });
     log(`Created backup directory: ${bakPath}`, 1);
   }
 
+  // set download path
   const client = await browser.target().createCDPSession();
   await client.send("Browser.setDownloadBehavior", {
     behavior: "allowAndName",
