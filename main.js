@@ -1,5 +1,6 @@
 require("dotenv").config();
 const os = require("os");
+const fs = require("fs");
 const puppeteer = require("puppeteer");
 const cron = require("node-cron");
 
@@ -48,11 +49,28 @@ const waitForSelector = async (page, selector) => {
   };
 
   const browser = await puppeteer.launch({
-    args: ["--force-device-scale-factor=0.4", "--window-size=640,2400"],
+    args: ["--force-device-scale-factor=0.4", "--window-size=900,2400"],
     defaultViewport: null,
     executablePath: process.env.BROWSER || undefined,
     headless: process.env.DEBUG == "true" ? false : "new",
   });
+
+  // set download path
+  const client = await browser.target().createCDPSession();
+  const bakPath = process.env.BACKUP_DIR;
+  await client.send("Browser.setDownloadBehavior", {
+    behavior: "allowAndName",
+    downloadPath: bakPath,
+    eventsEnabled: true,
+  });
+  client.on("Browser.downloadProgress", async (evt) => {
+    if (evt.state === "completed")
+      fs.renameSync(
+        `${bakPath}/${evt.guid}`,
+        `${bakPath}/${new Date().getTime()}.zip`
+      );
+  });
+
   const page = await browser.newPage();
   await page.goto(process.env.SHAREPOINT);
   await delay(500);
@@ -93,8 +111,7 @@ const waitForSelector = async (page, selector) => {
     str = str.replace("About a minute", "1 minute");
     str = str.replace("About an hour", "1 hour");
 
-    const now = new Date();
-    const date = new Date(now.getTime());
+    const date = new Date();
 
     if (str.includes("second"))
       date.setSeconds(date.getSeconds() - parseInt(str));
@@ -156,9 +173,6 @@ const waitForSelector = async (page, selector) => {
       );
 
       for (const activity of todayActivities.reverse()) {
-        let deleted = false,
-          renamed = 0;
-
         const items = await activity.$$(
           ".ms-ActivityItem-activityContent > div"
         );
@@ -174,6 +188,9 @@ const waitForSelector = async (page, selector) => {
 
         if (history.includes(`${author}${text}`)) continue;
         history.push(`${author}${text}`);
+
+        let deleted = false,
+          renamed = 0;
 
         if (text.includes("deleted")) deleted = true;
         if (text.includes("rename")) renamed = 1;
@@ -288,8 +305,22 @@ const waitForSelector = async (page, selector) => {
         `'BACKUP_QNTY' var is set to 1! The script WILL overwrite the ONLY backup if not stopped beforehand. Proceed cautiously!!`,
         1
       );
-    cron.schedule(process.env.BACKUP_FREQ, () => {
-      log("Backup!");
+    cron.schedule(process.env.BACKUP_FREQ, async () => {
+      try {
+        await waitForSelector(page, '[data-automationid="downloadCommand"]');
+
+        const files = fs.readdirSync(bakPath);
+        if (files.length >= process.env.BACKUP_QNTY) {
+          const oldest = files.sort((a, b) => a - b)[0];
+          fs.unlinkSync(`${bakPath}/${oldest}`);
+          log(`Replaced oldest backup: ${oldest}`, 1);
+        }
+
+        page.click('[data-automationid="downloadCommand"]');
+        log("Downloading backup", 1);
+      } catch (e) {
+        err("Couldn't download backup: " + e, 1);
+      }
     });
   }
 })();
