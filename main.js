@@ -1,9 +1,15 @@
-const os = require("os");
 require("dotenv").config();
+const os = require("os");
 const puppeteer = require("puppeteer");
+const cron = require("node-cron");
 
-const log = (msg) => {
-  if (process.env.VERBOSE) console.log(`${new Date().toISOString()}: ${msg}\n`);
+const log = (msg, forced) => {
+  if (process.env.VERBOSE || forced)
+    console.log(`${new Date().toISOString()}: ${msg}\n`);
+};
+
+const err = (msg, forced) => {
+  log(`\x1b[31m${msg}\x1b[0m`, forced);
 };
 
 // Delete puppeteer profiles from tmp directory to free up space
@@ -13,7 +19,7 @@ if (os.platform() === "linux") {
     if (file.startsWith("puppeteer_dev_chrome_profile"))
       fs.rmdirSync(`/tmp/${file}`, { recursive: true });
   });
-  log("Deleted puppeteer cache /tmp");
+  log("Deleted puppeteer cache /tmp", 1);
 }
 
 const waitForSelector = async (page, selector) => {
@@ -25,7 +31,7 @@ const waitForSelector = async (page, selector) => {
 
     return element;
   } catch (error) {
-    log(`\x1b[31mWaiting for selector ${selector} failed\x1b[0m`);
+    err(`Waiting for selector ${selector} failed`);
   }
 };
 
@@ -35,7 +41,7 @@ const waitForSelector = async (page, selector) => {
     try {
       await page.waitForNavigation();
     } catch {
-      log("No navigation to wait for?");
+      err("No navigation to wait for?");
     }
     return new Promise((res) => {
       setTimeout(res, time);
@@ -69,9 +75,8 @@ const waitForSelector = async (page, selector) => {
     await page.click("#idSIButton9");
   }
 
-  let name = "";
   await waitForSelector(page, "#O365_MainLink_Me");
-  name = await page.evaluate(
+  let name = await page.evaluate(
     (el) => el.textContent.slice(0, -2),
     await page.$("#O365_MainLink_Me")
   );
@@ -258,7 +263,7 @@ const waitForSelector = async (page, selector) => {
         sendDiscordEmbed(author, text, timestamp);
       }
     } catch (e) {
-      log("Error (Most likely internet connection issue): " + e);
+      err("Error (Most likely internet connection issue): " + e);
     }
   }
   await getUpdates();
@@ -268,8 +273,24 @@ const waitForSelector = async (page, selector) => {
     try {
       await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
     } catch (e) {
-      log("Error (Most likely internet connection issue): " + e);
+      err("Error (Most likely internet connection issue): " + e);
     }
     getUpdates();
   }, process.env.INTERVAL * 60000);
 })();
+
+if (process.env.BACKUP)
+  if (process.env.BACKUP_QNTY < 1)
+    err(
+      "'BACKUP_QNTY' var can't be 0. The script will skip the backup procedure.",
+      1
+    );
+  else if (process.env.BACKUP_QNTY == 1)
+    err(
+      `'BACKUP_QNTY' var is set to 1! The script WILL overwrite the ONLY backup if not stopped beforehand. Proceed cautiously!!`,
+      1
+    );
+
+cron.schedule(process.env.BACKUP_FREQ, () => {
+  log("Backup!");
+});
