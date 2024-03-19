@@ -314,16 +314,16 @@ const waitForSelector = async (page, selector) => {
       );
     cron.schedule(process.env.BACKUP_FREQ, async () => {
       try {
-        await waitForSelector(page, '[data-automationid="downloadCommand"]');
-
         const files = fs.readdirSync(bakPath);
-        if (files.length > process.env.BACKUP_QNTY) {
+        if (files.length >= process.env.BACKUP_QNTY) {
           const oldest = files.sort((a, b) => a - b)[0];
           fs.unlinkSync(`${bakPath}/${oldest}`);
           log(`Replaced oldest backup: ${oldest}`, 1);
         }
 
-        page.click('[data-automationid="downloadCommand"]');
+        await waitForSelector(page, '[data-automationid="downloadCommand"]');
+        await page.click('[data-automationid="downloadCommand"]');
+
         log("Downloading backup", 1);
       } catch (e) {
         err("Couldn't download backup: " + e, 1);
