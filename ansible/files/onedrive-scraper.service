@@ -3,3 +3,4 @@ Description=One Drive Scrapper App
 [Service]
 WorkingDirectory=/home/ec2-user/onedriver-scrapper
 ExecStart=/usr/bin/node /home/ec2-user/onedriver-scrapper/main.js
+User=ec2-user
