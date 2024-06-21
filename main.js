@@ -12,8 +12,7 @@ const err = (msg, forced) => {
   log(`\x1b[31m${msg}\x1b[0m`, forced);
 };
 
-// Delete puppeteer profiles from tmp directory to free up space
-// github.com/stefanzweifel/sidecar-browsershot/pull/54/files
+// Delete puppeteer profiles from tmp directory to free up space (github.com/stefanzweifel/sidecar-browsershot/pull/54/files)
 if (os.platform() === "linux") {
   fs.readdirSync("/tmp").forEach((file) => {
     if (file.startsWith("puppeteer_dev_chrome_profile"))
@@ -302,12 +301,13 @@ const waitForSelector = async (page, selector) => {
   });
 
   if (process.env.BACKUP !== "false") {
-    if (process.env.BACKUP_QNTY < 1)
+    const qnty = parseInt(process.env.BACKUP_QNTY);
+    if (qnty < 1)
       return err(
         "'BACKUP_QNTY' var can't be 0. The script will skip the backup procedure.",
         1
       );
-    else if (process.env.BACKUP_QNTY == 1)
+    else if (qnty == 1)
       err(
         `'BACKUP_QNTY' var is set to 1! The script WILL overwrite the ONLY backup if not stopped beforehand. Proceed cautiously!!`,
         1
@@ -315,7 +315,7 @@ const waitForSelector = async (page, selector) => {
     cron.schedule(process.env.BACKUP_FREQ, async () => {
       try {
         const files = fs.readdirSync(bakPath);
-        if (files.length >= process.env.BACKUP_QNTY) {
+        if (files.length >= qnty) {
           const oldest = files.sort((a, b) => a - b)[0];
           fs.unlinkSync(`${bakPath}/${oldest}`);
           log(`Replaced oldest backup: ${oldest}`, 1);
