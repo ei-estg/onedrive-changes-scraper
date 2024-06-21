@@ -161,8 +161,8 @@ const waitForSelector = async (page, selector) => {
   let history = [];
   async function getUpdates() {
     try {
-      await waitForSelector(page, '[data-automationid="openinfopaneCommand"]');
-      await page.click('[data-automationid="openinfopaneCommand"]');
+      await waitForSelector(page, '[data-automationid="detailsPane"]');
+      await page.click('[data-automationid="detailsPane"]');
       log("Opened details pane");
 
       await waitForSelector(page, ".od-ItemActivityFeed");
