@@ -9,10 +9,10 @@
         state: present
       become: true
 
-    #- name: Copy repository
-    #  copy:
-    #    src: ../
-    #    dest: /home/ec2-user/onedriver-scrapper
+    - name: Copy repository
+      copy:
+        src: /Users/rodrigosa/Desktop/Dev/onedrive-changes-scraper
+        dest: /home/ec2-user/onedriver-scrapper
 
     - name: Install dependencies
       npm:
@@ -37,5 +37,12 @@
         src: onedrive-scraper.service
         dest: /etc/systemd/system/onedrive-scraper.service
       become: true
+
+    - name: Start Service
+      systemd:
+        name: onedrive-scraper
+        enabled: true
+        state: started
+
 
 
