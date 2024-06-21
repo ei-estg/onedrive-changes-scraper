@@ -1,0 +1,41 @@
+- hosts: server
+  tasks:
+    - name: ping
+      ping:
+
+    - name: Install NodeJS
+      yum:
+        name: nodejs
+        state: present
+      become: true
+
+    #- name: Copy repository
+    #  copy:
+    #    src: ../
+    #    dest: /home/ec2-user/onedriver-scrapper
+
+    - name: Install dependencies
+      npm:
+        path: /home/ec2-user/onedriver-scrapper
+        state: present
+
+    - name: Download Chromium
+      get_url:
+        url: https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+        dest: /home/ec2-user/onedriver-scrapper
+      become: true
+
+    - name: Install Chromium
+      yum:
+        name: /home/ec2-user/onedriver-scrapper/google-chrome-stable_current_x86_64.rpm
+        state: present
+        disable_gpg_check: true
+      become: true
+
+    - name: Copy Service File
+      copy:
+        src: onedrive-scraper.service
+        dest: /etc/systemd/system/onedrive-scraper.service
+      become: true
+
+
